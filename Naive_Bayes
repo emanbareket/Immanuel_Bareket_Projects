@@ -1,0 +1,48 @@
+import pandas as pd
+import math
+
+df = pd.read_csv('./ucsb-cs190i-hw2-naive-bayes-f1/train.csv')
+
+total_ones = 0
+total_zeros = 0
+tokens_ones = 0
+tokens_zeros = 0
+frequency_ones = [0] * 41567
+frequency_zeros = [0] * 41567
+data = df.values
+for i in range(500):
+    label = data[i][41568]
+    if(label == 0):
+        total_zeros += 1
+    else:
+        total_ones += 1
+    for j in range(1, 41568):
+        if(label == 0):
+            frequency_zeros[j-1] += data[i][j]
+            tokens_zeros += data[i][j]
+        else:
+            frequency_ones[j-1] += data[i][j]
+            tokens_ones += data[i][j]
+            
+
+dft = pd.read_csv('./ucsb-cs190i-hw2-naive-bayes-f1/test_noans.csv')
+test = dft.values
+
+
+output = []
+for i in range(100):
+    p0 = math.log(total_zeros/500)
+    p1 = math.log(total_ones/500)
+    for j in range(1,41568):
+        p0 += math.log(((frequency_zeros[j-1]+1)/(tokens_zeros + 41567)))*test[i][j]
+        p1 += math.log(((frequency_ones[j-1]+1)/(tokens_ones + 41567)))*test[i][j]
+    if(p0 > p1):
+        output.append(0)
+    else:
+        output.append(1)
+
+
+dft['label'] = output
+dft.set_index("id", inplace=True)
+results = dft['label']
+results.to_csv('test_ans.csv')
