@@ -1,0 +1,44 @@
+import pandas as pd
+
+df = pd.read_csv('./ucsb-cs190i-hw2-voted-perceptron-f1 (1)/train.csv')
+dft = pd.read_csv('./ucsb-cs190i-hw2-voted-perceptron-f1 (1)/test_noans.csv')
+
+data = df.values
+test = dft.values
+
+k = 0
+c = [0]
+w = [[0] * 41568]
+for t in range(5):
+    for i in range(500):
+        s = sum(x_[0]*x_[1] for x_ in zip(data[i][1:-1],w[k]))
+        label = data[i][41568]
+        if(label == 0):
+            label = -1
+        if(label * s <= 0):
+            temp = []
+            for j in range(41568):
+                temp.append(w[k][j] + label*data[i][j+1])
+            w.append(temp)
+            c.append(1)
+            k+=1
+        else:
+            c[k] += 1
+output = []
+for i in range(100):
+    s = 0;
+    for k_ in range(k+1):
+        s_ = sum(x_[0]*x_[1] for x_ in zip(test[i][1:-1],w[k]))
+        if(s_ <= 0):
+            s -= c[k]
+        else:
+            s += c[k]
+    if(s <= 0):
+        output.append(0)
+    else:
+        output.append(1)
+
+dft['label'] = output
+dft.set_index("id", inplace=True)
+results = dft['label']
+results.to_csv('test_ans.csv')
