@@ -1,0 +1,45 @@
+import pandas as pd
+import math
+import numpy as np
+
+df = pd.read_csv('./hw3_data/train.csv')
+data = df.values
+t = pd.read_csv('./hw3_data/test_noans.csv')
+test = t.values
+copy = data
+
+a = .0495
+ad = .975
+g = .000001
+w = [0] * 3000
+prev = 100000000
+while True:
+    Lcl = 0
+    data = copy
+    np.random.shuffle(data)
+    for i in range(3000):
+        s = np.dot(data[i,1:-1], w)
+        p = 1/(1+math.exp(-s))
+        w = w + a*(np.dot(data[i][-1]-p, data[i][1:-1]) - np.dot(2*g, w))
+        Lcl += data[i][-1]*np.log(p) + (1-data[i][-1])*np.log(1-p)
+    a *= ad
+    if(abs(Lcl - np.linalg.norm(w, 2)) < .0001):
+        break
+    if(abs(Lcl - np.linalg.norm(w, 2) + prev) < .1):
+        break
+    prev = abs(Lcl - np.linalg.norm(w, 2))
+        
+output = []
+ones = 0
+for i in range(1000):
+    p = 1/(1+math.exp(-np.dot(test[i][1:], w)))
+    if(p <= 0.5):
+        output.append(0)
+    else:
+        ones += 1
+        output.append(1)
+print(output)
+t['label'] = output
+t.set_index("id", inplace=True)
+results = t['label']
+results.to_csv('test_answer.csv')
