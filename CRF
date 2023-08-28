@@ -1,0 +1,166 @@
+import nltk
+from nltk.corpus import conll2002
+import sklearn_crfsuite
+import pandas as pd
+
+# train = pd.read_csv('HW4_twitter_ner_data/train.csv')
+train = pd.read_csv('HW4_spanish_ner_data/train.csv')
+data = train.values
+data
+
+xTrain_ = data[:, 1]
+xTrain = []
+for i in range(len(xTrain_)):
+    word = xTrain_[i]
+    features = {
+        'bias': 1.0,
+        'word.lower()': word.lower(),
+        'word[-3:]': word[-3:],
+        'word[-2:]': word[-2:],
+        'word[0]' : word[0],
+        'word.isupper()': word.isupper(),
+        'word.istitle()': word.istitle(),
+        'word.isdigit()': word.isdigit(),
+    }
+    if i > 0:
+        word1 = xTrain_[i-1]
+        features.update({
+            '-1:word.lower()': word1.lower(),
+            '-1:word.istitle()': word1.istitle(),
+            '-1:word.isupper()': word1.isupper(),
+        })
+        if(word1 == '.'):
+            features['BOS'] = True
+        if(i > 1):
+            word2 = xTrain_[i-2]
+            features.update({
+            '-2:word.lower()': word2.lower(),
+            '-2:word.istitle()': word2.istitle(),
+            '-2:word.isupper()': word2.isupper(),
+            })
+            if(i > 2):
+                word3 = xTrain_[i-3]
+                features.update({
+                '-3:word.lower()': word3.lower(),
+                '-3:word.istitle()': word3.istitle(),
+                '-3:word.isupper()': word3.isupper(),
+                })
+    else:
+        features['BOS'] = True
+
+    if i < len(xTrain_)-1:
+        word1 = xTrain_[i+1]
+        features.update({
+            '+1:word.lower()': word1.lower(),
+            '+1:word.istitle()': word1.istitle(),
+            '+1:word.isupper()': word1.isupper(),
+        })
+        if(word1 == '.'):
+            features['EOS'] = True
+        if(i < len(xTrain_)-2):
+            word2 = xTrain_[i+2]
+            features.update({
+            '+2:word.lower()': word2.lower(),
+            '+2:word.istitle()': word2.istitle(),
+            '+2:word.isupper()': word2.isupper(),
+            })
+            if(i < len(xTrain_)-3):
+                word3 = xTrain_[i+3]
+                features.update({
+                '+3:word.lower()': word3.lower(),
+                '+3:word.istitle()': word3.istitle(),
+                '+3:word.isupper()': word3.isupper(),
+                })
+    else:
+        features['EOS'] = True
+    xTrain.append([features])
+yTrain_ = data[:, 3]
+yTrain = [[str(y)] for y in yTrain_]
+# test_ = pd.read_csv('HW4_twitter_ner_data/test_noans.csv')
+test_ = pd.read_csv('HW4_spanish_ner_data/test_noans.csv')
+test = test_.values[:,1]
+xTest = []
+for i in range(len(test)):
+    word = test[i]
+    features = {
+        'bias': 1.0,
+        'word.lower()': word.lower(),
+        'word[-3:]': word[-3:],
+        'word[-2:]': word[-2:],
+        'word[0]' : word[0],
+        'word.isupper()': word.isupper(),
+        'word.istitle()': word.istitle(),
+        'word.isdigit()': word.isdigit(),
+    }
+    if i > 0:
+        word1 = test[i-1]
+        features.update({
+            '-1:word.lower()': word1.lower(),
+            '-1:word.istitle()': word1.istitle(),
+            '-1:word.isupper()': word1.isupper(),
+        })
+        if(word1 == '.'):
+            features['BOS'] = True
+        if(i > 1):
+            word2 = test[i-2]
+            features.update({
+            '-2:word.lower()': word2.lower(),
+            '-2:word.istitle()': word2.istitle(),
+            '-2:word.isupper()': word2.isupper(),
+            })
+            if(i > 2):
+                word3 = test[i-3]
+                features.update({
+                '-3:word.lower()': word3.lower(),
+                '-3:word.istitle()': word3.istitle(),
+                '-3:word.isupper()': word3.isupper(),
+                })
+    else:
+        features['BOS'] = True
+
+    if i < len(test)-1:
+        word1 = test[i+1]
+        features.update({
+            '+1:word.lower()': word1.lower(),
+            '+1:word.istitle()': word1.istitle(),
+            '+1:word.isupper()': word1.isupper(),
+        })
+        if(word1 == '.'):
+            features['EOS'] = True
+        if(i < len(test)-2):
+            word2 = test[i+2]
+            features.update({
+            '+2:word.lower()': word2.lower(),
+            '+2:word.istitle()': word2.istitle(),
+            '+2:word.isupper()': word2.isupper(),
+            })
+            if(i < len(test)-3):
+                word3 = test[i+3]
+                features.update({
+                '+3:word.lower()': word3.lower(),
+                '+3:word.istitle()': word3.istitle(),
+                '+3:word.isupper()': word3.isupper(),
+                })
+    else:
+        features['EOS'] = True
+    xTest.append([features])
+crf = sklearn_crfsuite.CRF(
+    algorithm='lbfgs',
+    c1=0.1,
+    c2=0.1,
+    max_iterations=400,
+    all_possible_transitions=True
+)
+try:
+    crf.fit(xTrain, yTrain)
+except AttributeError:
+    pass
+predictions = crf.predict(xTest)
+pred = pd.DataFrame(test)
+preds = [p[0] for p in predictions]
+pred['id'] = pred.index
+pred['label'] = preds
+final = pred.iloc[:,-2:]
+final.set_index('id', inplace=True)
+print(final)
+final.to_csv('prediction_file.csv')
