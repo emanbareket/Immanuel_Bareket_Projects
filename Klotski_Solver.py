@@ -223,6 +223,7 @@ def valid(board):
 
 # Given a 20 digit integer representing a board, the function
 # returns the 20 digit integer representing the reflected board
+# Used to avoid logically duplicate positions, improves time complexity
 def invert(value):
     board = int_to_board(value)
     swap(board, 0, 0, 0, 3)
@@ -239,6 +240,7 @@ def invert(value):
 
 # Given an image and coordinates (x,y) the function returns an integer representing the
 # type of piece present at that position
+# Used for input
 def detect_piece(image, x, y):
     if(image.getpixel((x,y)) > 160 and image.getpixel((x,y)) < 175):
         return 0
@@ -286,6 +288,7 @@ def detect_piece(image, x, y):
         
 # Given an image of a valid klotski puzzle (cropped to fit the board), 
 # the function returns a 5 x 4 matrix represenation of the board
+# Used for input
 def image_to_board(image_name):
     board = [[0]*4 for i in range(5)]
     image = Image.open(image_name)
